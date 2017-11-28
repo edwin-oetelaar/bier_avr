@@ -1,4 +1,3 @@
-# Hey Emacs, this is a -*- makefile -*-
 #----------------------------------------------------------------------------
 # WinAVR Makefile Template written by Eric B. Weddington, J�rg Wunsch, et al.
 #  >> Modified for use with the rc_interface project. <<
@@ -81,7 +80,8 @@ BOARD  = NONE
 #     does not *change* the processor frequency - it should merely be updated to
 #     reflect the processor speed set externally so that the code can use accurate
 #     software delays.
-F_CPU = 8000000
+F_CPU = 1000000
+# 8 Mhz internal RC osc, and fuse for div8 on clock 
 
 
 # Input clock frequency.
@@ -113,17 +113,25 @@ OBJDIR = .
 
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = $(TARGET).c                                                 
-    # \
-	# led_monitor.c												  \
-	# states.c													  \
-	# usiTwiSlave.c												  \
-	# analog.c													  \
-	# potmeter.c													  \
-	# push_button.c
+SRC = wi_interrupts.c \
+	wi_digital.c \
+	wi_analog.c \
+	wiring.c
 
 # List C++ source files here. (C dependencies are automatically generated.)
-CPPSRC = 
+CPPSRC = $(TARGET).cpp \
+	hardware_serial.cpp \
+	hardware_serial0.cpp \
+	hardware_serial1.cpp \
+	hardware_serial2.cpp \
+	hardware_serial3.cpp \
+	Print.cpp \
+	Stream.cpp \
+	abi.cpp \
+	USBCore.cpp \
+	PluggableUSB.cpp \
+	WMath.cpp
+
 
 
 # List Assembler source files here.
@@ -671,9 +679,14 @@ clean_list:
 	$(REMOVE) $(TARGET).lss
 	$(REMOVE) $(SRC:%.c=$(OBJDIR)/%.o)
 	$(REMOVE) $(SRC:%.c=$(OBJDIR)/%.lst)
+	$(REMOVE) $(CPPSRC:%.cpp=$(OBJDIR)/%.o)
+	$(REMOVE) $(CPPSRC:%.cpp=$(OBJDIR)/%.lst)
 	$(REMOVE) $(SRC:.c=.s)
 	$(REMOVE) $(SRC:.c=.d)
 	$(REMOVE) $(SRC:.c=.i)
+	$(REMOVE) $(CPPSRC:.cpp=.s)
+	$(REMOVE) $(CPPSRC:.cpp=.d)
+	$(REMOVE) $(CPPSRC:.cpp=.i)
 	$(REMOVE) InvalidEvents.tmp
 	$(REMOVEDIR) .dep
 
