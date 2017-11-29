@@ -120,17 +120,17 @@ SRC = wi_interrupts.c \
 
 # List C++ source files here. (C dependencies are automatically generated.)
 CPPSRC = $(TARGET).cpp \
-	hardware_serial.cpp \
-	hardware_serial0.cpp \
-	hardware_serial1.cpp \
-	hardware_serial2.cpp \
-	hardware_serial3.cpp \
-	Print.cpp \
-	Stream.cpp \
-	abi.cpp \
-	USBCore.cpp \
-	PluggableUSB.cpp \
-	WMath.cpp
+	# Print.cpp \
+	# hardware_serial.cpp \
+	#hardware_serial0.cpp \
+	# hardware_serial1.cpp \
+	# hardware_serial2.cpp \
+	# hardware_serial3.cpp \
+	# Stream.cpp \
+	# abi.cpp \
+	# USBCore.cpp \
+	# PluggableUSB.cpp \
+	# WMath.cpp
 
 
 
