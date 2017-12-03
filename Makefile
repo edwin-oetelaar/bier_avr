@@ -1,22 +1,5 @@
 #----------------------------------------------------------------------------
 # WinAVR Makefile Template written by Eric B. Weddington, J�rg Wunsch, et al.
-#  >> Modified for use with the rc_interface project. <<
-#
-# Released to the Public Domain
-#
-# Additional material for this makefile was written by:
-# Peter Fleury
-# Tim Henigan
-# Colin O'Flynn
-# Reiner Patommel
-# Markus Pfaff
-# Sander Pool
-# Frederik Rouleau
-# Carlos Lamas
-# Dean Camera
-# Opendous Inc.
-# Denver Gingerich
-# Rene Luppens
 #
 #----------------------------------------------------------------------------
 # On command line:
@@ -60,6 +43,7 @@
 
 
 # MCU name
+# Edwin : dit is voor de POWER HUB SK2
 MCU = atmega48pb
 
 
@@ -81,7 +65,7 @@ BOARD  = NONE
 #     reflect the processor speed set externally so that the code can use accurate
 #     software delays.
 F_CPU = 1000000
-# 8 Mhz internal RC osc, and fuse for div8 on clock 
+# 8 Mhz internal RC osc, and fuse for div8 on clock Edwin 
 
 
 # Input clock frequency.
@@ -120,9 +104,10 @@ SRC = wi_interrupts.c \
 
 # List C++ source files here. (C dependencies are automatically generated.)
 CPPSRC = $(TARGET).cpp \
-	# Print.cpp \
-	# hardware_serial.cpp \
-	#hardware_serial0.cpp \
+	LiquidCrystal.cpp \
+	hardware_serial.cpp \
+	hardware_serial0.cpp \
+	Print.cpp \
 	# hardware_serial1.cpp \
 	# hardware_serial2.cpp \
 	# hardware_serial3.cpp \
