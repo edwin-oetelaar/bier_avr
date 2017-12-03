@@ -30,36 +30,16 @@
 // can't assume that its in that state when a sketch starts (and the
 // LiquidCrystal constructor is called).
 
-LiquidCrystal::LiquidCrystal(
-    // uint8_t rs,  uint8_t enable,
-    // 		     uint8_t d0, uint8_t d1, uint8_t d2, uint8_t d3
-)
+LiquidCrystal::LiquidCrystal()
 {
-  init(); // (1, rs, 255, enable, d0, d1, d2, d3, 0, 0, 0, 0);
+  init();
 }
 
 void LiquidCrystal::init()
-// uint8_t fourbitmode, uint8_t rs, uint8_t rw, uint8_t enable,
-// 			 uint8_t d0, uint8_t d1, uint8_t d2, uint8_t d3,
-// 			 uint8_t d4, uint8_t d5, uint8_t d6, uint8_t d7)
+
 {
-  // _rs_pin = rs;
-  // _rw_pin = rw;
-  // _enable_pin = enable;
 
-  // _data_pins[0] = d0;
-  // _data_pins[1] = d1;
-  // _data_pins[2] = d2;
-  // _data_pins[3] = d3;
-  // _data_pins[4] = d4;
-  // _data_pins[5] = d5;
-  // _data_pins[6] = d6;
-  // _data_pins[7] = d7;
-
-  // if (fourbitmode)
   _displayfunction = LCD_4BITMODE | LCD_1LINE | LCD_5x8DOTS;
-  // else
-  //   _displayfunction = LCD_8BITMODE | LCD_1LINE | LCD_5x8DOTS;
 
   begin(16, 1);
 }
@@ -74,10 +54,6 @@ void LiquidCrystal::begin(uint8_t cols, uint8_t lines, uint8_t dotsize)
 
   setRowOffsets(0x00, 0x40, 0x00 + cols, 0x40 + cols);
 
-  // for some 1 line displays you can select a 10 pixel high font
-  // if ((dotsize != LCD_5x8DOTS) && (lines == 1)) {
-  //   _displayfunction |= LCD_5x10DOTS;
-  // }
   /*
  * PE3/ADC7 is input voor extern spanning
  * MOSI/PB3 is E 
@@ -88,32 +64,17 @@ void LiquidCrystal::begin(uint8_t cols, uint8_t lines, uint8_t dotsize)
  * PD5 is D7
  */
 
-  // pinMode(_rs_pin, OUTPUT);
-  DDRB |= 0b00011000; /* bit 3*/
-  // we can save 1 pin by not using RW. Indicate by passing 255 instead of pin#
-  // if (_rw_pin != 255) {
-  //   pinMode(_rw_pin, OUTPUT);
-  // }
-  // pinMode(_enable_pin, OUTPUT);
+  DDRB |= 0b00011000; /* bit 3 en 4 zijn output */
+  DDRD |= 0b00111100; /* bits 2,3,4,5 zijn output */
 
-  // Do these once, instead of every time a character is drawn for speed reasons.
-  // for (int i = 0; i < ((_displayfunction & LCD_8BITMODE) ? 8 : 4); ++i)
-  // {
-  //   pinMode(_data_pins[i], OUTPUT);
-  // }
-  DDRD |= 0b00111100;
   // SEE PAGE 45/46 FOR INITIALIZATION SPECIFICATION!
   // according to datasheet, we need at least 40ms after power rises above 2.7V
   // before sending commands. Arduino can turn on way before 4.5V so we'll wait 50
   delayMicroseconds(50000);
+
   // Now we pull both RS and R/W low to begin commands
-  //digitalWrite(_rs_pin, LOW);
   PIN_RS_LOW;
-  //digitalWrite(_enable_pin, LOW);
   PIN_E_LOW;
-  // if (_rw_pin != 255) {
-  //   digitalWrite(_rw_pin, LOW);
-  // }
 
   //put the LCD into 4 bit or 8 bit mode
   // if (! (_displayfunction & LCD_8BITMODE)) {
@@ -134,21 +95,6 @@ void LiquidCrystal::begin(uint8_t cols, uint8_t lines, uint8_t dotsize)
 
   // finally, set to 4-bit interface
   write4bits(0x02);
-  // } else {
-  //   // this is according to the hitachi HD44780 datasheet
-  //   // page 45 figure 23
-
-  //   // Send function set command sequence
-  //   command(LCD_FUNCTIONSET | _displayfunction);
-  //   delayMicroseconds(4500);  // wait more than 4.1ms
-
-  //   // second try
-  //   command(LCD_FUNCTIONSET | _displayfunction);
-  //   delayMicroseconds(150);
-
-  //   // third go
-  //   command(LCD_FUNCTIONSET | _displayfunction);
-  // }
 
   // finally, set # lines, font size, etc.
   command(LCD_FUNCTIONSET | _displayfunction);
@@ -203,11 +149,11 @@ void LiquidCrystal::setCursor(uint8_t col, uint8_t row)
 }
 
 // Turn the display on/off (quickly)
-void LiquidCrystal::noDisplay()
-{
-  _displaycontrol &= ~LCD_DISPLAYON;
-  command(LCD_DISPLAYCONTROL | _displaycontrol);
-}
+// void LiquidCrystal::noDisplay()
+// {
+//   _displaycontrol &= ~LCD_DISPLAYON;
+//   command(LCD_DISPLAYCONTROL | _displaycontrol);
+// }
 void LiquidCrystal::display()
 {
   _displaycontrol |= LCD_DISPLAYON;
@@ -238,48 +184,6 @@ void LiquidCrystal::blink()
   command(LCD_DISPLAYCONTROL | _displaycontrol);
 }
 
-// These commands scroll the display without changing the RAM
-// void LiquidCrystal::scrollDisplayLeft(void) {
-//   command(LCD_CURSORSHIFT | LCD_DISPLAYMOVE | LCD_MOVELEFT);
-// }
-// void LiquidCrystal::scrollDisplayRight(void) {
-//   command(LCD_CURSORSHIFT | LCD_DISPLAYMOVE | LCD_MOVERIGHT);
-// }
-
-// This is for text that flows Left to Right
-// void LiquidCrystal::leftToRight(void) {
-//   _displaymode |= LCD_ENTRYLEFT;
-//   command(LCD_ENTRYMODESET | _displaymode);
-// }
-
-// This is for text that flows Right to Left
-// void LiquidCrystal::rightToLeft(void) {
-//   _displaymode &= ~LCD_ENTRYLEFT;
-//   command(LCD_ENTRYMODESET | _displaymode);
-// }
-
-// This will 'right justify' text from the cursor
-// void LiquidCrystal::autoscroll(void) {
-//   _displaymode |= LCD_ENTRYSHIFTINCREMENT;
-//   command(LCD_ENTRYMODESET | _displaymode);
-// }
-
-// This will 'left justify' text from the cursor
-// void LiquidCrystal::noAutoscroll(void) {
-//   _displaymode &= ~LCD_ENTRYSHIFTINCREMENT;
-//   command(LCD_ENTRYMODESET | _displaymode);
-// }
-
-// // Allows us to fill the first 8 CGRAM locations
-// // with custom characters
-// void LiquidCrystal::createChar(uint8_t location, uint8_t charmap[]) {
-//   location &= 0x7; // we only have 8 locations 0-7
-//   command(LCD_SETCGRAMADDR | (location << 3));
-//   for (int i=0; i<8; i++) {
-//     write(charmap[i]);
-//   }
-// }
-
 /*********** mid level commands, for sending data/cmds */
 
 inline void LiquidCrystal::command(uint8_t value)
@@ -303,41 +207,26 @@ void LiquidCrystal::send(uint8_t value, uint8_t mode)
   else
     PIN_RS_LOW
 
-  //digitalWrite(_rs_pin, mode);
-
-  // if there is a RW pin indicated, set it low to Write
-  // if (_rw_pin != 255) {
-  //   digitalWrite(_rw_pin, LOW);
-  // }
-
-  // if (_displayfunction & LCD_8BITMODE) {
-  //   write8bits(value);
-  // } else {
   write4bits(value >> 4);
   write4bits(value);
-  // }
 }
 
 void LiquidCrystal::pulseEnable(void)
 {
-  //digitalWrite(_enable_pin, LOW);
+
   PIN_E_LOW;
   delayMicroseconds(1);
   PIN_E_HIGH;
-  //digitalWrite(_enable_pin, HIGH);
+
   delayMicroseconds(1); // enable pulse must be >450ns
   PIN_E_LOW;
-  //digitalWrite(_enable_pin, LOW);
+
   delayMicroseconds(100); // commands need > 37us to settle
 }
 
 void LiquidCrystal::write4bits(uint8_t value)
 {
-  // for (int i = 0; i < 4; i++)
-  // {
-  //   digitalWrite(_data_pins[i], (value >> i) & 0x01);
-  // }
-
+  /* do not shif, just unroll the loop for 4 bits, set output bits */
   if (value & 0x01)
     PIN_D4_HIGH
   else
@@ -358,13 +247,6 @@ void LiquidCrystal::write4bits(uint8_t value)
   else
     PIN_D7_LOW
 
+  /* toggle E pin */
   pulseEnable();
 }
-
-// void LiquidCrystal::write8bits(uint8_t value) {
-//   for (int i = 0; i < 8; i++) {
-//     digitalWrite(_data_pins[i], (value >> i) & 0x01);
-//   }
-
-//   pulseEnable();
-// }

@@ -13,11 +13,7 @@
 #include "wi_private.h"
 #include "arduino.h"
 #include "LiquidCrystal.h"
-
-//#define __same_type(a, b) __builtin_types_compatible_p(typeof(a), typeof(b))
-//#define __must_be_array(a) BUILD_BUG_ON_ZERO(__same_type((a), &(a)[0]))
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-//+ __must_be_array(arr))
 
 // Declared weak in Arduino.h to allow user redefinitions.
 int atexit(void (*/*func*/)()) { return 0; }
@@ -70,16 +66,6 @@ typedef enum { OFF = 0,
                BLINK = 2,
                BLINK_FAST = 3 } LEDSTATES;
 
-// typedef struct
-// {
-//     volatile uint8_t *port;
-//     uint8_t bit;
-// } indicator_t;
-
-// indicator_t indicator[] = {
-//     {&PORTC, 0}, /* led 0 */
-//     {&PORTC, 1}, /* led 1 */
-// };
 
 static volatile uint8_t led_state[2] = {0}; /* 2 leds, OFF per default */
 uint8_t prev_led_state[2] = {0};            /* previous state of leds */
@@ -150,73 +136,6 @@ void timercallbacks(void)
         }
     }
 }
-/* 
-* ledno => LED1 LED2 
-* value => 0:off, 255:on, 1:slow, 2:fast 
-* return => 0:succes, -1:bad_led, -2:bad_value
-*/
-// int8_t set_led_state(uint8_t ledno, uint8_t value)
-// {
-//     uint8_t p; /* memory ref */
-//     uint8_t b;
-//     switch (ledno)
-//     {
-
-//     case LED1:
-//         p = LED1PORT;
-//         b = LED1BIT;
-//         break;
-
-//     case LED2:
-//         p = LED2PORT;
-//         b = LED2BIT;
-//         break;
-
-//     default:
-//         return -2; /* led not found */
-//     }
-
-//     switch (value)
-//     {
-
-//     case 0: /* uit */
-//         cbi(p, b);
-//         break;
-
-//     case 1: /* aan */
-//         sbi(p, b);
-//         break;
-
-//     case 2: /* blink*/
-//         break;
-
-//     default:
-//         return -1;
-//     }
-
-//     //     if (value == 0)
-//     //     {
-//     //     }
-//     //     else if (value == 0xFF)
-//     //     {
-//     //         /* aan */
-//     //     }
-//     //     else if (value == 0x01)
-//     //     {
-//     //         /* slow */
-//     //     }
-//     //     else if (value == 0x02)
-//     //     {
-//     //         /* fast */
-//     //     }
-//     //     else
-//     //     {
-//     //         /* unsupported led state */
-//     //         return -1;
-//     //     }
-//     // }
-//     return 0;
-// }
 
 void setup()
 {
