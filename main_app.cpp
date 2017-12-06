@@ -60,12 +60,10 @@ typedef enum LEDS {
         cbi(PORTC, 1); \
     }
 
-
 typedef enum { OFF = 0,
                ON = 1,
                BLINK = 2,
                BLINK_FAST = 3 } LEDSTATES;
-
 
 static volatile uint8_t led_state[2] = {0}; /* 2 leds, OFF per default */
 uint8_t prev_led_state[2] = {0};            /* previous state of leds */
@@ -135,6 +133,19 @@ void timercallbacks(void)
             prev_led_state[i] = led_state[i];
         }
     }
+
+    int ch = Serial.read();
+    if (ch < 0)
+    {
+        /* nothing*/
+    }
+    else
+    {
+        if (ch = 65)
+        {
+            led_state[0] = 0;
+        }
+    }
 }
 
 void setup()
@@ -142,8 +153,70 @@ void setup()
     DDRC = 0xFF;  //PC as output
     PORTC = 0x00; //keep all LEDs off
     Serial.begin(9600);
-    lcd.begin(16,2);
+    lcd.begin(16, 2);
     lcd.print("hello folks");
+    /* set up ADC for port 7, internal ref
+    atmel document 42176 page 334,  ADC Multiplexer Selection Register, Name:  ADMUX, Offset:  0x7C, Reset:  0x00 
+    #define MUX0 0
+    #define MUX1 1
+    #define MUX2 2
+    #define MUX3 3
+    # 4 is reserved
+    #define ADLAR 5
+    #define REFS0 6
+    #define REFS1 7
+      */
+    ADMUX = 0b11000111; // intern ref, mux is input ADC7, no ADLAR (left align data)
+                        /*
+
+#define ADCSRA  _SFR_MEM8(0x7A)
+#define ADPS0   0 // ADC prescaler 0
+#define ADPS1   1 // ADC prescaler 1 
+#define ADPS2   2 // ADC prescaler 2
+#define ADIE    3 // ADC interrupt enable
+#define ADIF    4 // ADC interrupt flag 
+#define ADATE   5 // ADC auto trigger enable 
+#define ADSC    6 // ADC start conversion 
+#define ADEN    7 // ADC enable 
+ADPS[2:0] => Divsion factor 
+
+000 2
+001 2
+010 4
+011 8
+100 16
+101 32
+110 64
+111 128
+
+*/
+
+    // ADC Enable and prescaler of 32
+    // 1e6 / 32 = 31250 very slow conversion
+    ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS0);
+}
+
+uint16_t get_adc_value()
+{
+
+    // start the conversion
+    sbi(ADCSRA, ADSC);
+    // ADSC is cleared when the conversion finishes
+    while (bit_is_set(ADCSRA, ADSC))
+    {
+        /* empty wait */
+    };
+
+    // we have to read ADCL first; doing so locks both ADCL
+    // and ADCH until ADCH is read.  reading ADCL second would
+    // cause the results of each conversion to be discarded,
+    // as ADCL and ADCH would be locked when it completed.
+    uint8_t low, high;
+    low = ADCL;
+    high = ADCH;
+
+    // combine the two bytes
+    return (high << 8) | low;
 }
 
 int main(int argc, char **argv)
@@ -188,5 +261,12 @@ void loop()
 
         led_state[0] = ledState;
         Serial.println(previousMillis);
+        lcd.setCursor(0, 1);
+        lcd.print(previousMillis);
+        /* read a value from the ADC input 7 */
+        uint16_t adc_value = get_adc_value();
+        lcd.setCursor(8, 1);
+        lcd.print(adc_value);
+        lcd.print("    ");
     }
 }
