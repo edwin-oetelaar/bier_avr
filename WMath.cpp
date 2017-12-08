@@ -22,19 +22,21 @@
 */
 
 extern "C" {
-  #include "stdlib.h"
+#include "stdlib.h"
 }
 
 void randomSeed(unsigned long seed)
 {
-  if (seed != 0) {
+  if (seed != 0)
+  {
     srandom(seed);
   }
 }
 
 long random(long howbig)
 {
-  if (howbig == 0) {
+  if (howbig == 0)
+  {
     return 0;
   }
   return random() % howbig;
@@ -42,7 +44,8 @@ long random(long howbig)
 
 long random(long howsmall, long howbig)
 {
-  if (howsmall >= howbig) {
+  if (howsmall >= howbig)
+  {
     return howsmall;
   }
   long diff = howbig - howsmall;

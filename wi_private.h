@@ -31,7 +31,7 @@
 #include "arduino.h" /* lower case, dit is geen Java bullshit */
 
 #ifdef __cplusplus
-extern "C"{
+extern "C" {
 #endif
 
 #ifndef cbi

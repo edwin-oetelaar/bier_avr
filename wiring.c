@@ -52,7 +52,8 @@ ISR(TIMER0_OVF_vect)
 
 	m += MILLIS_INC;
 	f += FRACT_INC;
-	if (f >= FRACT_MAX) {
+	if (f >= FRACT_MAX)
+	{
 		f -= FRACT_MAX;
 		m += 1;
 	}
@@ -76,10 +77,11 @@ unsigned long millis()
 	return m;
 }
 
-unsigned long micros() {
+unsigned long micros()
+{
 	unsigned long m;
 	uint8_t oldSREG = SREG, t;
-	
+
 	cli();
 	m = timer0_overflow_count;
 #if defined(TCNT0)
@@ -87,7 +89,7 @@ unsigned long micros() {
 #elif defined(TCNT0L)
 	t = TCNT0L;
 #else
-	#error TIMER 0 not defined
+#error TIMER 0 not defined
 #endif
 
 #ifdef TIFR0
@@ -99,7 +101,7 @@ unsigned long micros() {
 #endif
 
 	SREG = oldSREG;
-	
+
 	return ((m << 8) + t) * (64 / clockCyclesPerMicrosecond());
 }
 
@@ -107,9 +109,11 @@ void delay(unsigned long ms)
 {
 	uint16_t start = (uint16_t)micros();
 
-	while (ms > 0) {
+	while (ms > 0)
+	{
 		yield();
-		if (((uint16_t)micros() - start) >= 1000) {
+		if (((uint16_t)micros() - start) >= 1000)
+		{
 			ms--;
 			start += 1000;
 		}
@@ -119,16 +123,17 @@ void delay(unsigned long ms)
 /* Delay for the given number of microseconds.  Assumes a 1, 8, 12, 16, 20 or 24 MHz clock. */
 void delayMicroseconds(unsigned int us)
 {
-	// call = 4 cycles + 2 to 4 cycles to init us(2 for constant delay, 4 for variable)
+// call = 4 cycles + 2 to 4 cycles to init us(2 for constant delay, 4 for variable)
 
-	// calling avrlib's delay_us() function with low values (e.g. 1 or
-	// 2 microseconds) gives delays longer than desired.
-	//delay_us(us);
+// calling avrlib's delay_us() function with low values (e.g. 1 or
+// 2 microseconds) gives delays longer than desired.
+//delay_us(us);
 #if F_CPU >= 24000000L
 	// for the 24 MHz clock for the aventurous ones, trying to overclock
 
 	// zero delay fix
-	if (!us) return; //  = 3 cycles, (4 when true)
+	if (!us)
+		return; //  = 3 cycles, (4 when true)
 
 	// the following loop takes a 1/6 of a microsecond (4 cycles)
 	// per iteration, so execute it six times for each microsecond of
@@ -145,12 +150,16 @@ void delayMicroseconds(unsigned int us)
 
 	// for a one-microsecond delay, simply return.  the overhead
 	// of the function call takes 18 (20) cycles, which is 1us
-	__asm__ __volatile__ (
-		"nop" "\n\t"
-		"nop" "\n\t"
-		"nop" "\n\t"
+	__asm__ __volatile__(
+		"nop"
+		"\n\t"
+		"nop"
+		"\n\t"
+		"nop"
+		"\n\t"
 		"nop"); //just waiting 4 cycles
-	if (us <= 1) return; //  = 3 cycles, (4 when true)
+	if (us <= 1)
+		return; //  = 3 cycles, (4 when true)
 
 	// the following loop takes a 1/5 of a microsecond (4 cycles)
 	// per iteration, so execute it five times for each microsecond of
@@ -167,7 +176,8 @@ void delayMicroseconds(unsigned int us)
 
 	// for a one-microsecond delay, simply return.  the overhead
 	// of the function call takes 14 (16) cycles, which is 1us
-	if (us <= 1) return; //  = 3 cycles, (4 when true)
+	if (us <= 1)
+		return; //  = 3 cycles, (4 when true)
 
 	// the following loop takes 1/4 of a microsecond (4 cycles)
 	// per iteration, so execute it four times for each microsecond of
@@ -184,7 +194,8 @@ void delayMicroseconds(unsigned int us)
 
 	// for a 1 microsecond delay, simply return.  the overhead
 	// of the function call takes 14 (16) cycles, which is 1.5us
-	if (us <= 1) return; //  = 3 cycles, (4 when true)
+	if (us <= 1)
+		return; //  = 3 cycles, (4 when true)
 
 	// the following loop takes 1/3 of a microsecond (4 cycles)
 	// per iteration, so execute it three times for each microsecond of
@@ -201,7 +212,8 @@ void delayMicroseconds(unsigned int us)
 
 	// for a 1 and 2 microsecond delay, simply return.  the overhead
 	// of the function call takes 14 (16) cycles, which is 2us
-	if (us <= 2) return; //  = 3 cycles, (4 when true)
+	if (us <= 2)
+		return; //  = 3 cycles, (4 when true)
 
 	// the following loop takes 1/2 of a microsecond (4 cycles)
 	// per iteration, so execute it twice for each microsecond of
@@ -217,8 +229,10 @@ void delayMicroseconds(unsigned int us)
 	// for the 1 MHz internal clock (default settings for common Atmega microcontrollers)
 
 	// the overhead of the function calls is 14 (16) cycles
-	if (us <= 16) return; //= 3 cycles, (4 when true)
-	if (us <= 25) return; //= 3 cycles, (4 when true), (must be at least 25 if we want to substract 22)
+	if (us <= 16)
+		return; //= 3 cycles, (4 when true)
+	if (us <= 25)
+		return; //= 3 cycles, (4 when true), (must be at least 25 if we want to substract 22)
 
 	// compensate for the time taken by the preceeding and next commands (about 22 cycles)
 	us -= 22; // = 2 cycles
@@ -226,14 +240,16 @@ void delayMicroseconds(unsigned int us)
 	// per iteration, so execute it us/4 times
 	// us is at least 4, divided by 4 gives us 1 (no zero delay bug)
 	us >>= 2; // us div 4, = 4 cycles
-	
 
 #endif
 
 	// busy wait
-	__asm__ __volatile__ (
-		"1: sbiw %0,1" "\n\t" // 2 cycles
-		"brne 1b" : "=w" (us) : "0" (us) // 2 cycles
+	__asm__ __volatile__(
+		"1: sbiw %0,1"
+		"\n\t" // 2 cycles
+		"brne 1b"
+		: "=w"(us)
+		: "0"(us) // 2 cycles
 	);
 	// return = 4 cycles
 }
@@ -243,7 +259,7 @@ void init()
 	// this needs to be called before setup() or some functions won't
 	// work there
 	sei();
-	
+
 	// on the ATmega168, timer 0 is also used for fast hardware pwm
 	// (using phase-correct PWM would mean that timer 0 overflowed half as often
 	// resulting in different millis() behavior on the ATmega8 and ATmega168)
@@ -269,7 +285,7 @@ void init()
 	sbi(TCCR0A, CS01);
 	sbi(TCCR0A, CS00);
 #else
-	#error Timer 0 prescale factor 64 not set correctly
+#error Timer 0 prescale factor 64 not set correctly
 #endif
 
 	// enable timer 0 overflow interrupt
@@ -278,7 +294,7 @@ void init()
 #elif defined(TIMSK0) && defined(TOIE0)
 	sbi(TIMSK0, TOIE0);
 #else
-	#error	Timer 0 overflow interrupt not set correctly
+#error Timer 0 overflow interrupt not set correctly
 #endif
 
 	// timers 1 and 2 are used for phase-correct hardware pwm
@@ -311,7 +327,7 @@ void init()
 #elif defined(TCCR2B) && defined(CS22)
 	sbi(TCCR2B, CS22);
 //#else
-	// Timer 2 not finished (may not be present on this CPU)
+// Timer 2 not finished (may not be present on this CPU)
 #endif
 
 	// configure timer 2 for phase correct pwm (8-bit)
@@ -320,63 +336,63 @@ void init()
 #elif defined(TCCR2A) && defined(WGM20)
 	sbi(TCCR2A, WGM20);
 //#else
-	// Timer 2 not finished (may not be present on this CPU)
+// Timer 2 not finished (may not be present on this CPU)
 #endif
 
 #if defined(TCCR3B) && defined(CS31) && defined(WGM30)
-	sbi(TCCR3B, CS31);		// set timer 3 prescale factor to 64
+	sbi(TCCR3B, CS31); // set timer 3 prescale factor to 64
 	sbi(TCCR3B, CS30);
-	sbi(TCCR3A, WGM30);		// put timer 3 in 8-bit phase correct pwm mode
+	sbi(TCCR3A, WGM30); // put timer 3 in 8-bit phase correct pwm mode
 #endif
 
 #if defined(TCCR4A) && defined(TCCR4B) && defined(TCCR4D) /* beginning of timer4 block for 32U4 and similar */
-	sbi(TCCR4B, CS42);		// set timer4 prescale factor to 64
+	sbi(TCCR4B, CS42);									  // set timer4 prescale factor to 64
 	sbi(TCCR4B, CS41);
 	sbi(TCCR4B, CS40);
-	sbi(TCCR4D, WGM40);		// put timer 4 in phase- and frequency-correct PWM mode	
-	sbi(TCCR4A, PWM4A);		// enable PWM mode for comparator OCR4A
-	sbi(TCCR4C, PWM4D);		// enable PWM mode for comparator OCR4D
-#else /* beginning of timer4 block for ATMEGA1280 and ATMEGA2560 */
+	sbi(TCCR4D, WGM40); // put timer 4 in phase- and frequency-correct PWM mode
+	sbi(TCCR4A, PWM4A); // enable PWM mode for comparator OCR4A
+	sbi(TCCR4C, PWM4D); // enable PWM mode for comparator OCR4D
+#else					/* beginning of timer4 block for ATMEGA1280 and ATMEGA2560 */
 #if defined(TCCR4B) && defined(CS41) && defined(WGM40)
-	sbi(TCCR4B, CS41);		// set timer 4 prescale factor to 64
+	sbi(TCCR4B, CS41); // set timer 4 prescale factor to 64
 	sbi(TCCR4B, CS40);
-	sbi(TCCR4A, WGM40);		// put timer 4 in 8-bit phase correct pwm mode
+	sbi(TCCR4A, WGM40); // put timer 4 in 8-bit phase correct pwm mode
 #endif
-#endif /* end timer4 block for ATMEGA1280/2560 and similar */	
+#endif /* end timer4 block for ATMEGA1280/2560 and similar */
 
 #if defined(TCCR5B) && defined(CS51) && defined(WGM50)
-	sbi(TCCR5B, CS51);		// set timer 5 prescale factor to 64
+	sbi(TCCR5B, CS51); // set timer 5 prescale factor to 64
 	sbi(TCCR5B, CS50);
-	sbi(TCCR5A, WGM50);		// put timer 5 in 8-bit phase correct pwm mode
+	sbi(TCCR5A, WGM50); // put timer 5 in 8-bit phase correct pwm mode
 #endif
 
 #if defined(ADCSRA)
-	// set a2d prescaler so we are inside the desired 50-200 KHz range.
-	#if F_CPU >= 16000000 // 16 MHz / 128 = 125 KHz
-		sbi(ADCSRA, ADPS2);
-		sbi(ADCSRA, ADPS1);
-		sbi(ADCSRA, ADPS0);
-	#elif F_CPU >= 8000000 // 8 MHz / 64 = 125 KHz
-		sbi(ADCSRA, ADPS2);
-		sbi(ADCSRA, ADPS1);
-		cbi(ADCSRA, ADPS0);
-	#elif F_CPU >= 4000000 // 4 MHz / 32 = 125 KHz
-		sbi(ADCSRA, ADPS2);
-		cbi(ADCSRA, ADPS1);
-		sbi(ADCSRA, ADPS0);
-	#elif F_CPU >= 2000000 // 2 MHz / 16 = 125 KHz
-		sbi(ADCSRA, ADPS2);
-		cbi(ADCSRA, ADPS1);
-		cbi(ADCSRA, ADPS0);
-	#elif F_CPU >= 1000000 // 1 MHz / 8 = 125 KHz
-		cbi(ADCSRA, ADPS2);
-		sbi(ADCSRA, ADPS1);
-		sbi(ADCSRA, ADPS0);
-	#else // 128 kHz / 2 = 64 KHz -> This is the closest you can get, the prescaler is 2
-		cbi(ADCSRA, ADPS2);
-		cbi(ADCSRA, ADPS1);
-		sbi(ADCSRA, ADPS0);
-	#endif
+// set a2d prescaler so we are inside the desired 50-200 KHz range.
+#if F_CPU >= 16000000 // 16 MHz / 128 = 125 KHz
+	sbi(ADCSRA, ADPS2);
+	sbi(ADCSRA, ADPS1);
+	sbi(ADCSRA, ADPS0);
+#elif F_CPU >= 8000000 // 8 MHz / 64 = 125 KHz
+	sbi(ADCSRA, ADPS2);
+	sbi(ADCSRA, ADPS1);
+	cbi(ADCSRA, ADPS0);
+#elif F_CPU >= 4000000 // 4 MHz / 32 = 125 KHz
+	sbi(ADCSRA, ADPS2);
+	cbi(ADCSRA, ADPS1);
+	sbi(ADCSRA, ADPS0);
+#elif F_CPU >= 2000000 // 2 MHz / 16 = 125 KHz
+	sbi(ADCSRA, ADPS2);
+	cbi(ADCSRA, ADPS1);
+	cbi(ADCSRA, ADPS0);
+#elif F_CPU >= 1000000 // 1 MHz / 8 = 125 KHz
+	cbi(ADCSRA, ADPS2);
+	sbi(ADCSRA, ADPS1);
+	sbi(ADCSRA, ADPS0);
+#else				   // 128 kHz / 2 = 64 KHz -> This is the closest you can get, the prescaler is 2
+	cbi(ADCSRA, ADPS2);
+	cbi(ADCSRA, ADPS1);
+	sbi(ADCSRA, ADPS0);
+#endif
 	// enable a2d conversions
 	sbi(ADCSRA, ADEN);
 #endif
