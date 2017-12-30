@@ -19,12 +19,15 @@
 int atexit(void (*/*func*/)()) { return 0; }
 void yield(void){};
 
+const uint32_t millis_in_24hr =  60 * 60 * 24 * 1000;
+const uint32_t adc_to_volt = 173;
+
 // constants won't change. Used here to set a pin number:
 const int ledPin = LED_BUILTIN; // the number of the LED pin
-typedef enum LEDS {
-    LED1 = 0,
-    LED2 = 1
-};
+// typedef enum LEDS {
+//     LED1 = 0,
+//     LED2 = 1
+// };
 
 // #define LED1PORT PORTC
 // #define LED1BIT 0
@@ -65,8 +68,11 @@ typedef enum { OFF = 0,
                BLINK = 2,
                BLINK_FAST = 3 } LEDSTATES;
 
-static volatile uint8_t led_state[2] = {0}; /* 2 leds, OFF per default */
-uint8_t prev_led_state[2] = {0};            /* previous state of leds */
+static volatile uint8_t output_state[2] = {0}; /* 2 leds, OFF per default */
+uint8_t prev_output_state[2] = {0};            /* previous state of leds */
+
+static volatile uint8_t device_state = 0; /* after power on, we start here */
+static uint8_t teller = 0;                // teller voor in state 1
 
 // Variables will change:
 int ledState = LOW; // ledState used to set the LED
@@ -84,9 +90,9 @@ void timercallbacks(void)
 { /* dit wordt iedere x ms aangeroepen */
     uint8_t changed = 0;
     /* controleer of user led status veranderde sinds vorige keer */
-    for (uint8_t i = 0; i < ARRAY_SIZE(led_state); i++)
+    for (uint8_t i = 0; i < ARRAY_SIZE(output_state); i++)
     {
-        if (prev_led_state[i] != led_state[i])
+        if (prev_output_state[i] != output_state[i])
         {
             changed = 1;
             break;
@@ -97,9 +103,9 @@ void timercallbacks(void)
     if (changed)
     {
         /* alle leds aan of uit zetten */
-        for (uint8_t i = 0; i < ARRAY_SIZE(led_state); i++)
+        for (uint8_t i = 0; i < ARRAY_SIZE(output_state); i++)
         {
-            if (led_state[i] == 0)
+            if (output_state[i] == 0)
             {
                 switch (i)
                 {
@@ -114,7 +120,7 @@ void timercallbacks(void)
                 //cbi(indicator[i].port, indicator[i].bit);
                 //cbi(PORTC,1);
             }
-            else if (led_state[i] == 1)
+            else if (output_state[i] == 1)
             {
                 switch (i)
                 {
@@ -130,7 +136,7 @@ void timercallbacks(void)
                 }
             }
             /* update led state */
-            prev_led_state[i] = led_state[i];
+            prev_output_state[i] = output_state[i];
         }
     }
 
@@ -141,20 +147,22 @@ void timercallbacks(void)
     }
     else
     {
-        if (ch = 65)
+        if (ch == 65)
         {
-            led_state[0] = 0;
+            output_state[0] = 0;
         }
     }
 }
+
+
 
 void setup()
 {
     DDRC = 0xFF;  //PC as output
     PORTC = 0x00; //keep all LEDs off
     Serial.begin(9600);
-    lcd.begin(16, 2);
-    lcd.print("hello folks");
+    // lcd.begin(16, 2);
+    //  lcd.print("hello folks");
     /* set up ADC for port 7, internal ref
     atmel document 42176 page 334,  ADC Multiplexer Selection Register, Name:  ADMUX, Offset:  0x7C, Reset:  0x00 
     #define MUX0 0
@@ -219,11 +227,85 @@ uint16_t get_adc_value()
     return (high << 8) | low;
 }
 
+void loop()
+{
+    // here is where you'd put code that needs to be running all the time.
+
+    unsigned long currentMillis = millis();
+    uint8_t ns = device_state; // maintain state if not changed
+    switch (device_state)
+    {
+    case 0:
+        /* initial state, init statemachine set outputs to sane value */
+        // power on, we doen de blauwe led aan, de fet uit
+        output_state[1] = LOW;  // fet
+        output_state[0] = HIGH; // led
+        ns = 1;
+        teller = 0; // teller die we in state 1 gaan gebruiken
+
+        break;
+
+    case 1:
+        /* led blinking and power checking state */
+        if (currentMillis - previousMillis > interval)
+        {
+            // save the last time you blinked the LED
+            previousMillis = currentMillis;
+            teller += 1; // tel de pulsen van de led
+            // if the LED is off turn it on and vice-versa:
+            ledState = (ledState == LOW) ? HIGH : LOW;
+            // {
+            //     ledState = HIGH;
+            // }
+            // else
+            // {
+            //     ledState = LOW;
+            // }
+
+            output_state[0] = ledState;
+
+            Serial.println(previousMillis);
+            //   lcd.setCursor(0, 1);
+            //   lcd.print(previousMillis);
+            /* read a value from the ADC input 7 */
+            uint16_t adc_value = get_adc_value();
+            //   lcd.setCursor(8, 1);
+            //   lcd.print(adc_value);
+            //   lcd.print("    ");
+        }
+
+        if (teller == 10)
+            ns = 2;
+
+        break;
+
+    case 2:
+        if (currentMillis - previousMillis > 1000L)
+        {
+            // save the last time you blinked the LED, slow blinking
+            previousMillis = currentMillis;
+
+            ledState = (ledState == LOW) ? HIGH : LOW;
+            output_state[0] = ledState;
+            // Serial.println(previousMillis);
+            uint16_t adc_value = get_adc_value();
+            Serial.println(adc_value  *  adc_to_volt); // 117813 => 11.7813 Volt
+        }
+
+         output_state[1] = HIGH; // fet on
+        
+        break;
+    }
+
+    device_state = ns;
+}
+
+/****** main loop *******/
+
 int main(int argc, char **argv)
 {
 
     init();
-
     setup();
 
     for (;;)
@@ -235,38 +317,5 @@ int main(int argc, char **argv)
             serialEventRun();
         if (timercallbacks)
             timercallbacks();
-    }
-}
-
-void loop()
-{
-    // here is where you'd put code that needs to be running all the time.
-
-    unsigned long currentMillis = millis();
-
-    if (currentMillis - previousMillis > interval)
-    {
-        // save the last time you blinked the LED
-        previousMillis = currentMillis;
-
-        // if the LED is off turn it on and vice-versa:
-        if (ledState == LOW)
-        {
-            ledState = HIGH;
-        }
-        else
-        {
-            ledState = LOW;
-        }
-
-        led_state[0] = ledState;
-        Serial.println(previousMillis);
-        lcd.setCursor(0, 1);
-        lcd.print(previousMillis);
-        /* read a value from the ADC input 7 */
-        uint16_t adc_value = get_adc_value();
-        lcd.setCursor(8, 1);
-        lcd.print(adc_value);
-        lcd.print("    ");
     }
 }
