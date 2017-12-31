@@ -309,12 +309,12 @@ void loop()
         /* check input voltage as fast as we can, check value and react quickly 
           112969 TRIPPED
           On output short, polyfuse works, but voltage drops just below 11.3 volts
-          We need to have hysteresis, so we trip out low at 9.0 volts => adc=520
+          We need to have hysteresis, so we trip out low at 8.0 volts => adc=462
           BLM units work at about 7.5 to 18 volts, so this is OK
         */
         adc_value = get_adc_value();
 
-        if (in_range(adc_value, 520, 840))
+        if (in_range(adc_value, 462, 840))
         {
             // alles ok, input between 9.0 and 14.5 volt
             output_state[1] = HIGH; // fet on
