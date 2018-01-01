@@ -62,17 +62,17 @@ const uint32_t adc_to_volt = 173; /* multiplier: get_adc_value * adc_to_volt = v
         cbi(PORTC, 1); \
     }
 
-static volatile uint8_t output_state[2] = {0}; /* 2 leds, OFF per default */
-uint8_t prev_output_state[2] = {0};            /* previous state of leds */
+static uint8_t output_state[2] = {0};      /* 2 leds, OFF per default */
+static uint8_t prev_output_state[2] = {0}; /* previous state of leds */
 
-static volatile uint8_t device_state = 0;   /* after power on, we start here */
+static uint8_t device_state = 0;            /* after power on, we start here */
 static uint8_t teller = 0;                  // teller voor in state 1
 static uint8_t range_counter = 0;           /* count adc values in range */
 static uint32_t sec_counter = secs_in_24hr; /* tel de seconden, bij 0 is het resetten geblazen */
 static uint8_t full_reset = 0;              /* flag, if 1 the WDT will reset the MCU */
-int ledState = LOW;                         // ledState used to set the LED
+static int ledState = LOW;                  // ledState used to set the LED
 
-unsigned long previousMillis = 0; // will store last time LED was updated
+static unsigned long previousMillis = 0; // will store last time LED was updated
 
 // const long interval = 250; // interval at which to blink (milliseconds)
 
@@ -91,7 +91,7 @@ uint8_t in_range(int val, int min, int max)
 
 void timercallbacks(void) /* dit wordt iedere x ms aangeroepen */
 {
-    uint8_t changed = 0;
+    uint8_t changed = 0; // flag
     /* controleer of user led status veranderde sinds vorige keer
      * een routine mag enkel de globale variablen updaten die worden dan 
      * in deze timer callback ineens naar de outputs doorgestuurd, 
@@ -106,7 +106,6 @@ void timercallbacks(void) /* dit wordt iedere x ms aangeroepen */
             break;
         }
     }
-
     /* als nodig zet alle leds aan of uit */
     if (changed)
     {
@@ -244,8 +243,9 @@ void loop()
     case 0:
         /* initial state, init statemachine set outputs to sane value */
         // power on, we doen de blauwe led aan, de fet uit
-        output_state[1] = LOW;  // fet
         output_state[0] = HIGH; // led
+        output_state[1] = LOW;  // fet
+
         ns = 1;
         teller = 0; // teller die we in state 1 gaan gebruiken
         Serial.println("wait for pwr good");
@@ -259,8 +259,8 @@ void loop()
         if (currentMillis - previousMillis > 100L)
         {
             // save the last time you blinked the LED
-            previousMillis = currentMillis;
-            teller += 1; // tel de pulsen van de led
+            previousMillis += 100; // currentMillis;
+            teller += 1;           // tel de pulsen van de led
             // if the LED is off turn it on and vice-versa:
             ledState = (ledState == LOW) ? HIGH : LOW;
 
@@ -280,15 +280,19 @@ void loop()
         }
 
         /* minimaal 20x knipperen en 10x in range, dan is alles OK */
-        if (teller > 30 && range_counter > 20) {
+        if (teller > 30 && range_counter > 20)
+        {
             ns = 2;
             Serial.println("Power : good");
-            Serial.println(adc_value * adc_to_volt);
+            // Serial.println(adc_value * adc_to_volt);
         }
 
         break;
 
     case 2: /* normal working state, voltage in range, FET on, Blink SLOW */
+
+        adc_value = get_adc_value();
+
         if (currentMillis - previousMillis > 1000L)
         {
             previousMillis += 1000; // currentMillis;
@@ -303,7 +307,12 @@ void loop()
                 full_reset = 1; /* do not reset WDT anymore, we will do a hardware reset */
             }
             else
+            {
+                Serial.print("t=");
                 Serial.println(sec_counter);
+                Serial.print("v=");
+                Serial.println(adc_value * adc_to_volt);
+            }
         }
 
         /* check input voltage as fast as we can, check value and react quickly 
@@ -312,7 +321,6 @@ void loop()
           We need to have hysteresis, so we trip out low at 8.0 volts => adc=462
           BLM units work at about 7.5 to 18 volts, so this is OK
         */
-        adc_value = get_adc_value();
 
         if (in_range(adc_value, 462, 840))
         {
@@ -342,7 +350,7 @@ void loop()
             Serial.println(adc_value * adc_to_volt); // 117813 => 11.7813 Volt
             if (in_range(adc_value, 660, 840))
             {
-                // alles ok ga naar 1
+                // alles ok ga naar 0
                 ns = 0;
                 Serial.println("pwr returned");
             }
@@ -359,7 +367,7 @@ void loop()
 
     device_state = ns;
 
-    if (! full_reset) 
+    if (!full_reset)
         wdt_reset(); /* we will live when we get here */
 }
 
